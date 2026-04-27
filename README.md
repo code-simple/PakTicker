@@ -42,8 +42,6 @@ Hover over a row for full tooltip: orders, completion %, available USDT, payment
    - Press `Win + R`, type `shell:startup`, press **Enter**
    - Copy a shortcut to `start.vbs` into that folder
 
-To undo, see [Removing startup entry](#removing-startup-entry).
-
 ## P2P rates explained
 
 Binance P2P is a peer-to-peer marketplace where individual traders post buy/sell ads for USDT priced in PKR. The gadget queries **merchant-verified traders only** and picks the best available rate for each row.

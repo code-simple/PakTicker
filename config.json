@@ -2,8 +2,9 @@
     "symbols":  [
                     "BTCUSDT",
                     "CFXUSDT",
-                    "PAXGUSDT"
+                    "PAXGUSDT",
+                    "SOLUSDT"
                 ],
     "thresholdHi":  100000,
-    "thresholdLo":  2000
+    "thresholdLo":  2500
 }

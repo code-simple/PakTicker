@@ -15,17 +15,32 @@ public class WinAPI {
 '@
 
 # ── Config ────────────────────────────────────────────────────────────────────
-$configPath     = Join-Path $PSScriptRoot 'coins_config.json'
+$configPath     = Join-Path $PSScriptRoot 'config.json'
 $defaultSymbols = @('BTCUSDT', 'CFXUSDT', 'PAXGUSDT')
 
 function Load-Config {
     if (Test-Path $configPath) {
-        try { return @(Get-Content $configPath -Raw | ConvertFrom-Json) } catch {}
+        try {
+            $raw = Get-Content $configPath -Raw | ConvertFrom-Json
+            # migrate old format (plain array of symbols)
+            if ($raw -is [array]) {
+                $script:coinSymbols = @($raw)
+            } else {
+                $script:coinSymbols  = @($raw.symbols)
+                $script:thresholdHi  = if ($raw.thresholdHi) { [int]$raw.thresholdHi } else { 100000 }
+                $script:thresholdLo  = if ($raw.thresholdLo) { [int]$raw.thresholdLo } else { 1000 }
+            }
+            return
+        } catch {}
     }
-    return $defaultSymbols
+    $script:coinSymbols = $defaultSymbols
 }
 function Save-Config {
-    $script:coinSymbols | ConvertTo-Json | Set-Content $configPath
+    [PSCustomObject]@{
+        symbols     = $script:coinSymbols
+        thresholdHi = $script:thresholdHi
+        thresholdLo = $script:thresholdLo
+    } | ConvertTo-Json | Set-Content $configPath
 }
 function Get-CoinLabel([string]$sym) {
     if ($sym -eq 'PAXGUSDT') { return 'GOLD' }
@@ -39,9 +54,12 @@ function Update-PriceUrl {
     $script:url = 'https://api.binance.com/api/v3/ticker/24hr?symbols=[' + $syms + ']'
 }
 
-$script:coinSymbols = Load-Config
-$script:labels      = @{}
-$pollSeconds        = 5
+$script:coinSymbols  = $defaultSymbols
+$script:thresholdHi  = 100000
+$script:thresholdLo  = 1000
+Load-Config
+$script:labels       = @{}
+$pollSeconds         = 5
 Update-PriceUrl
 
 # ── PKR rows XAML ─────────────────────────────────────────────────────────────
@@ -83,7 +101,49 @@ $xaml = @"
                 FontFamily="Consolas" FontSize="10" BorderThickness="0"
                 Padding="0,3" HorizontalAlignment="Left" Cursor="Hand" Margin="0,2,0,4"/>
         <TextBlock Text="P2P Binance" HorizontalAlignment="Center" Foreground="#99AABB"
-                   FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,2,0,2"/>
+                   FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,2,0,1"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,3">
+          <TextBlock Text="Hi:" Foreground="#446677" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" Margin="0,0,2,0"/>
+          <Button x:Name="BtnHiDec" Content="&#x2212;" Width="15" Height="15"
+                  Background="Transparent" Foreground="#446677" BorderThickness="0"
+                  FontFamily="Consolas" FontSize="11" FontWeight="Bold"
+                  Padding="0" Cursor="Hand" VerticalAlignment="Center"/>
+          <Grid Width="34" VerticalAlignment="Center">
+            <TextBlock x:Name="TxtThreshHi" Text="100k" TextAlignment="Center"
+                       Foreground="#6699BB" FontFamily="Consolas" FontSize="9"
+                       VerticalAlignment="Center" Cursor="Hand"/>
+            <TextBox x:Name="TxtThreshHiInput"
+                     Background="#0D1520" Foreground="#88CCEE" CaretBrush="#88CCEE"
+                     FontFamily="Consolas" FontSize="9"
+                     BorderBrush="#336688" BorderThickness="1"
+                     Padding="1,0" HorizontalContentAlignment="Center"
+                     Visibility="Collapsed"/>
+          </Grid>
+          <Button x:Name="BtnHiInc" Content="+" Width="15" Height="15"
+                  Background="Transparent" Foreground="#446677" BorderThickness="0"
+                  FontFamily="Consolas" FontSize="11" FontWeight="Bold"
+                  Padding="0" Cursor="Hand" VerticalAlignment="Center"/>
+          <TextBlock Text="  Lo:" Foreground="#446677" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" Margin="6,0,2,0"/>
+          <Button x:Name="BtnLoDec" Content="&#x2212;" Width="15" Height="15"
+                  Background="Transparent" Foreground="#446677" BorderThickness="0"
+                  FontFamily="Consolas" FontSize="11" FontWeight="Bold"
+                  Padding="0" Cursor="Hand" VerticalAlignment="Center"/>
+          <Grid Width="30" VerticalAlignment="Center">
+            <TextBlock x:Name="TxtThreshLo" Text="1k" TextAlignment="Center"
+                       Foreground="#6699BB" FontFamily="Consolas" FontSize="9"
+                       VerticalAlignment="Center" Cursor="Hand"/>
+            <TextBox x:Name="TxtThreshLoInput"
+                     Background="#0D1520" Foreground="#88CCEE" CaretBrush="#88CCEE"
+                     FontFamily="Consolas" FontSize="9"
+                     BorderBrush="#336688" BorderThickness="1"
+                     Padding="1,0" HorizontalContentAlignment="Center"
+                     Visibility="Collapsed"/>
+          </Grid>
+          <Button x:Name="BtnLoInc" Content="+" Width="15" Height="15"
+                  Background="Transparent" Foreground="#446677" BorderThickness="0"
+                  FontFamily="Consolas" FontSize="11" FontWeight="Bold"
+                  Padding="0" Cursor="Hand" VerticalAlignment="Center"/>
+        </StackPanel>
 $pkrRowXaml
       </StackPanel>
     </Border>
@@ -251,6 +311,16 @@ $txtAddError   = $window.FindName('TxtAddError')
 $btnAddConfirm = $window.FindName('BtnAddConfirm')
 $btnAddCancel  = $window.FindName('BtnAddCancel')
 $btnAddCoin    = $window.FindName('BtnAddCoin')
+$txtThreshHi   = $window.FindName('TxtThreshHi')
+$txtThreshLo   = $window.FindName('TxtThreshLo')
+$btnHiDec      = $window.FindName('BtnHiDec')
+$btnHiInc      = $window.FindName('BtnHiInc')
+$btnLoDec         = $window.FindName('BtnLoDec')
+$btnLoInc         = $window.FindName('BtnLoInc')
+$txtThreshHiInput = $window.FindName('TxtThreshHiInput')
+$txtThreshLoInput = $window.FindName('TxtThreshLoInput')
+$txtThreshHi.Text = Format-Threshold $script:thresholdHi
+$txtThreshLo.Text = Format-Threshold $script:thresholdLo
 
 # ── Event handlers ────────────────────────────────────────────────────────────
 $window.Add_MouseRightButtonDown({ $overlay.Visibility = 'Visible' })
@@ -269,6 +339,79 @@ $btnAddCoin.Add_Click({
     $txtSymbol.Focus() | Out-Null
 })
 $btnAddCancel.Add_Click({ $overlayAdd.Visibility = 'Collapsed' })
+
+$btnHiDec.Add_Click({
+    if ($script:thresholdHi -gt 10000) { $script:thresholdHi -= 10000 }
+    $txtThreshHi.Text = Format-Threshold $script:thresholdHi
+    Save-Config; Update-PKR
+})
+$btnHiInc.Add_Click({
+    if ($script:thresholdHi -lt 500000) { $script:thresholdHi += 10000 }
+    $txtThreshHi.Text = Format-Threshold $script:thresholdHi
+    Save-Config; Update-PKR
+})
+$btnLoDec.Add_Click({
+    if ($script:thresholdLo -gt 500) { $script:thresholdLo -= 500 }
+    $txtThreshLo.Text = Format-Threshold $script:thresholdLo
+    Save-Config; Update-PKR
+})
+$btnLoInc.Add_Click({
+    if ($script:thresholdLo -lt 20000) { $script:thresholdLo += 500 }
+    $txtThreshLo.Text = Format-Threshold $script:thresholdLo
+    Save-Config; Update-PKR
+})
+
+# ── Threshold inline edit ─────────────────────────────────────────────────────
+$applyThreshHi = {
+    $v = Parse-ThresholdInput $txtThreshHiInput.Text 10000 500000 $script:thresholdHi
+    $script:thresholdHi   = $v
+    $txtThreshHi.Text     = Format-Threshold $v
+    $txtThreshHiInput.Visibility = 'Collapsed'
+    $txtThreshHi.Visibility      = 'Visible'
+    Save-Config; Update-PKR
+}
+$applyThreshLo = {
+    $v = Parse-ThresholdInput $txtThreshLoInput.Text 500 20000 $script:thresholdLo
+    $script:thresholdLo   = $v
+    $txtThreshLo.Text     = Format-Threshold $v
+    $txtThreshLoInput.Visibility = 'Collapsed'
+    $txtThreshLo.Visibility      = 'Visible'
+    Save-Config; Update-PKR
+}
+
+$txtThreshHi.Add_MouseLeftButtonDown({
+    $txtThreshHiInput.Text       = $script:thresholdHi
+    $txtThreshHi.Visibility      = 'Collapsed'
+    $txtThreshHiInput.Visibility = 'Visible'
+    $txtThreshHiInput.SelectAll()
+    $txtThreshHiInput.Focus() | Out-Null
+})
+$txtThreshHiInput.Add_KeyDown({
+    if ($_.Key -eq 'Return') { & $applyThreshHi }
+    elseif ($_.Key -eq 'Escape') {
+        $txtThreshHiInput.Visibility = 'Collapsed'
+        $txtThreshHi.Visibility      = 'Visible'
+    }
+    $_.Handled = ($_.Key -eq 'Return' -or $_.Key -eq 'Escape')
+})
+$txtThreshHiInput.Add_LostFocus({ & $applyThreshHi })
+
+$txtThreshLo.Add_MouseLeftButtonDown({
+    $txtThreshLoInput.Text       = $script:thresholdLo
+    $txtThreshLo.Visibility      = 'Collapsed'
+    $txtThreshLoInput.Visibility = 'Visible'
+    $txtThreshLoInput.SelectAll()
+    $txtThreshLoInput.Focus() | Out-Null
+})
+$txtThreshLoInput.Add_KeyDown({
+    if ($_.Key -eq 'Return') { & $applyThreshLo }
+    elseif ($_.Key -eq 'Escape') {
+        $txtThreshLoInput.Visibility = 'Collapsed'
+        $txtThreshLo.Visibility      = 'Visible'
+    }
+    $_.Handled = ($_.Key -eq 'Return' -or $_.Key -eq 'Escape')
+})
+$txtThreshLoInput.Add_LostFocus({ & $applyThreshLo })
 
 $btnAddConfirm.Add_Click({
     $sym = $txtSymbol.Text.Trim().ToUpper()
@@ -340,6 +483,25 @@ function Get-P2PAds([string]$tradeType, [int]$transAmount) {
     return @($resp.data | Where-Object { [double]$_.adv.surplusAmount -ge ([double]$_.adv.minSingleTransAmount / [double]$_.adv.price) })
 }
 
+function Parse-ThresholdInput([string]$s, [int]$min, [int]$max, [int]$fallback) {
+    $s = $s.Trim().ToLower()
+    $mult = 1
+    if ($s.EndsWith('m'))      { $mult = 1000000; $s = $s.TrimEnd('m') }
+    elseif ($s.EndsWith('k')) { $mult = 1000;    $s = $s.TrimEnd('k') }
+    $num = 0
+    if ([double]::TryParse($s, [ref]$num)) {
+        $v = [int]([math]::Round($num * $mult))
+        return [math]::Max($min, [math]::Min($max, $v))
+    }
+    return $fallback
+}
+
+function Format-Threshold([int]$v) {
+    if ($v -ge 1000000) { return ('{0:N0}M' -f ($v / 1000000)) }
+    if ($v -ge 1000)    { return ('{0:N0}k' -f ($v / 1000)) }
+    return "$v"
+}
+
 function Format-PKRAmt([double]$v) {
     if ($v -ge 1000000) { return ('{0:N1}M' -f ($v / 1000000)) }
     if ($v -ge 1000)    { return ('{0:N0}k' -f ($v / 1000)) }
@@ -368,10 +530,10 @@ function Set-PKRCell($cell, $ad) {
 
 function Update-PKR {
     try {
-        $bHi = Get-P2PAds 'BUY'  100000 | Select-Object -First 1
-        $bLo = Get-P2PAds 'BUY'  1000   | Select-Object -First 1
-        $sHi = Get-P2PAds 'SELL' 100000 | Select-Object -First 1
-        $sLo = Get-P2PAds 'SELL' 1000   | Select-Object -First 1
+        $bHi = Get-P2PAds 'BUY'  $script:thresholdHi | Select-Object -First 1
+        $bLo = Get-P2PAds 'BUY'  $script:thresholdLo | Select-Object -First 1
+        $sHi = Get-P2PAds 'SELL' $script:thresholdHi | Select-Object -First 1
+        $sLo = Get-P2PAds 'SELL' $script:thresholdLo | Select-Object -First 1
         Set-PKRCell $pkrCells['BHi'] $bHi
         Set-PKRCell $pkrCells['BLo'] $bLo
         Set-PKRCell $pkrCells['SHi'] $sHi

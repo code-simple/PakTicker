@@ -15,7 +15,7 @@ public class WinAPI {
 '@
 
 # ── Config ────────────────────────────────────────────────────────────────────
-$configPath     = Join-Path $PSScriptRoot 'config.json'
+$configPath     = Join-Path $PSScriptRoot 'coins_config.json'
 $defaultSymbols = @('BTCUSDT', 'CFXUSDT', 'PAXGUSDT')
 
 function Load-Config {

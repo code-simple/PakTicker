@@ -17,31 +17,32 @@ A lightweight always-on-top desktop ticker for crypto prices and Binance P2P USD
 ## What it shows
 
 **Crypto prices** (via Binance spot API)
+
 - BTC, CFX, GOLD (PAXG proxy) — price + 24h % change
 - Add any Binance spot symbol at runtime via the `+ add coin` button
 - All coins except GOLD can be removed with the `×` button
 
 **P2P Binance** (USDT/PKR, merchants only)
 
-| Row | Color | Meaning |
-|-----|-------|---------|
-| B-Hi | Green | Best rate to **buy** USDT — high-volume threshold |
-| B-Lo | Green | Best rate to **buy** USDT — low-volume threshold |
+| Row  | Color | Meaning                                            |
+| ---- | ----- | -------------------------------------------------- |
+| B-Hi | Green | Best rate to **buy** USDT — high-volume threshold  |
+| B-Lo | Green | Best rate to **buy** USDT — low-volume threshold   |
 | S-Hi | Red   | Best rate to **sell** USDT — high-volume threshold |
-| S-Lo | Red   | Best rate to **sell** USDT — low-volume threshold |
+| S-Lo | Red   | Best rate to **sell** USDT — low-volume threshold  |
 
 Each P2P row shows: `trader name | rate | min-max limit`  
 Hover over a row for full tooltip: orders, completion %, available USDT, payment methods.
 
-## How to run
+## Installation
 
-**Recommended — double-click `start.vbs`**  
-Launches silently with no console window. On first run it automatically adds itself to Windows startup so the gadget starts with every login.
+1. **Download** — clone or download this repo to any folder on your PC.
+2. **Run** — double-click `start.vbs`. No installer needed.
+3. **Startup** — to launch the gadget at every login, place a shortcut to `start.vbs` in your startup folder:
+   - Press `Win + R`, type `shell:startup`, press **Enter**
+   - Copy a shortcut to `start.vbs` into that folder
 
-**Manual (with console window):**
-```powershell
-powershell -ExecutionPolicy Bypass -File coins_gadget.ps1
-```
+To undo, see [Removing startup entry](#removing-startup-entry).
 
 ## P2P rates explained
 
@@ -68,14 +69,14 @@ Hovering over any P2P row shows the full detail: monthly order count, completion
 
 ## Controls
 
-| Action | Result |
-|--------|--------|
-| Right-click | Confirm close overlay |
-| Esc | Dismiss overlay / close |
-| Click `+ add coin` | Add any Binance symbol (e.g. `ETHUSDT`) |
-| Click `×` on a row | Remove that coin |
-| Click `−` / `+` next to Hi or Lo | Step threshold by 10k / 500 PKR |
-| Click the threshold value | Type a custom value (supports `k` suffix) |
+| Action                           | Result                                    |
+| -------------------------------- | ----------------------------------------- |
+| Right-click                      | Confirm close overlay                     |
+| Esc                              | Dismiss overlay / close                   |
+| Click `+ add coin`               | Add any Binance symbol (e.g. `ETHUSDT`)   |
+| Click `×` on a row               | Remove that coin                          |
+| Click `−` / `+` next to Hi or Lo | Step threshold by 10k / 500 PKR           |
+| Click the threshold value        | Type a custom value (supports `k` suffix) |
 
 ## Adding coins
 
@@ -88,15 +89,17 @@ Coins are loaded from `config.json` on startup. If the file is missing, defaults
 
 ## Removing startup entry
 
-To stop the gadget from launching at login, delete the `CoinsGadget` entry from:  
-`regedit → HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`
+To stop the gadget from launching at login:
+
+- Press `Win + R`, type `shell:startup`, press **Enter**
+- Delete the `start.vbs` shortcut from that folder
 
 ## Refresh rates
 
-| Data | Interval |
-|------|----------|
-| Crypto prices | Every 5 seconds |
-| P2P rates | Every 10 seconds (4 API calls) |
+| Data          | Interval                       |
+| ------------- | ------------------------------ |
+| Crypto prices | Every 5 seconds                |
+| P2P rates     | Every 10 seconds (4 API calls) |
 
 ## License
 

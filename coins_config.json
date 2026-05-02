@@ -1,0 +1,9 @@
+{
+    "symbols":  [
+                    "BTCUSDT",
+                    "CFXUSDT",
+                    "PAXGUSDT"
+                ],
+    "thresholdHi":  200000,
+    "thresholdLo":  1000
+}

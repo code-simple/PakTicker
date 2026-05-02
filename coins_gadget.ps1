@@ -514,7 +514,7 @@ function Set-PKRCell($cell, $ad) {
         $cell.Price.ToolTip = $null; $cell.Lim.ToolTip = $null
         return
     }
-    $cell.Price.Text       = ('{0} {1:N2}' -f $cell.Prefix, [double]$ad.adv.price)
+    $cell.Price.Text       = ('{0} {1:N4}' -f $cell.Prefix, [double]$ad.adv.price)
     $cell.Price.Foreground = $cell.Color
     $cell.Lim.Text         = ('{0}-{1}' -f (Format-PKRAmt ([double]$ad.adv.minSingleTransAmount)), (Format-PKRAmt ([double]$ad.adv.maxSingleTransAmount)))
     $cell.Name.Text        = $ad.advertiser.nickName
@@ -554,7 +554,7 @@ function Update-Prices {
             if (-not $l) { continue }
             $price = [double]$row.lastPrice
             $chg   = [double]$row.priceChangePercent
-            $l.Price.Text       = ('{0:N2}' -f $price)
+            $l.Price.Text       = ('{0:N4}' -f $price)
             $l.Price.Foreground = $white
             $sign = if ($chg -ge 0) { '+' } else { '' }
             $l.Chg.Text       = ('{0}{1:N2}%' -f $sign, $chg)
